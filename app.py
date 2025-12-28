@@ -1,88 +1,134 @@
 import streamlit as st
+import pandas as pd
 
-# 設定網頁標題與圖示
-st.set_page_config(page_title="2026年1月沖繩家族旅行", page_icon="🚗", layout="wide")
+# 1. 網頁配置：手機優先
+st.set_page_config(page_title="2026年1月沖繩家族旅遊", page_icon="🐢", layout="wide")
 
-# 自定義 CSS 讓介面更像旅遊 App
+# 2. 可愛旅遊風 CSS 樣式
 st.markdown("""
     <style>
-    .main {
-        background-color: #f0f2f6;
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+    html, body, [class*="css"] { font-family: 'Noto Sans TC', sans-serif; }
+    
+    .stApp { background: #F0F7F9; }
+    
+    /* 卡片設計 */
+    .trip-card {
+        background-color: white;
+        padding: 15px;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        margin-bottom: 12px;
+        border-left: 5px solid #FF8C94;
     }
+    .restaurant-card { border-left: 5px solid #FFD54F; }
+    .transport-card { border-left: 5px solid #4FC3F7; }
+    
+    /* 標籤樣式 */
+    .tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        margin-right: 5px;
+        color: white;
+    }
+    .tag-must-eat { background-color: #E57373; }
+    .tag-must-buy { background-color: #BA68C8; }
+    .tag-tips { background-color: #4DB6AC; }
+    
+    /* 手機優化按鈕 */
     .stButton>button {
         width: 100%;
-        border-radius: 10px;
-        height: 3em;
-        background-color: #ff4b4b;
+        border-radius: 20px;
+        border: none;
+        background-color: #007AFF;
         color: white;
-    }
-    .day-header {
-        background-color: #007bff;
-        color: white;
-        padding: 10px;
-        border-radius: 5px;
-        margin-top: 20px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🌊2026年1月沖繩家族旅行")
-st.write("點擊下方景點名稱即可直接開啟 **Google 地圖導航**")
+# --- 側邊欄或頂部導覽 ---
+tab1, tab2, tab3 = st.tabs(["🗓 每日行程", "🏠 住宿/航班", "💰 預算記帳"])
 
-# 行程資料
-itinerary = {
-    "Day 1：1/1 (週四) 啟程 [cite: 8, 95]": [
-        ("16:50 桃園國際機場 [cite: 9, 108, 109]", "https://www.google.com/maps/search/?api=1&query=桃園國際機場"),
-        ("19:10 那霸機場 [cite: 10, 113, 115]", "https://www.google.com/maps/search/?api=1&query=那霸機場"),
-        ("20:56 住宿：La'gent 飯店 [cite: 22, 122, 123]", "https://www.google.com/maps/search/?api=1&query=La'gent+Hotel+Okinawa+Naha"),
-        ("21:58 晚餐：Steak House 88 Jr. [cite: 27, 104, 127]", "https://www.google.com/maps/search/?api=1&query=Steak+House+88+Jr.+Matsuyama")
-    ],
-    "Day 2：1/2 (週五) 南部之旅 [cite: 11, 133]": [
-        ("09:07 取車：relax car rental [cite: 14, 153, 154]", "https://www.google.com/maps/search/?api=1&query=relax+car+rental+okinawa"),
-        ("09:41 波上宮 [cite: 21, 158, 160]", "https://www.google.com/maps/search/?api=1&query=波上宮"),
-        ("11:02 午餐：Posillipo 海景餐廳 [cite: 25, 166, 167]", "https://www.google.com/maps/search/?api=1&query=Posillipo+Okinawa"),
-        ("12:36 瀨長島 [cite: 30, 169, 170]", "https://www.google.com/maps/search/?api=1&query=瀨長島"),
-        ("15:04 玉泉洞 [cite: 32, 174, 175]", "https://www.google.com/maps/search/?api=1&query=玉泉洞"),
-        ("16:39 國際通屋台村 [cite: 15, 179, 180]", "https://www.google.com/maps/search/?api=1&query=國際通屋台村"),
-        ("17:46 國際通逛街 [cite: 17, 185, 186]", "https://www.google.com/maps/search/?api=1&query=國際通")
-    ],
-    "Day 3：1/3 (週六) 中部購物 [cite: 34, 190]": [
-        ("09:16 首里城 [cite: 42, 211, 212]", "https://www.google.com/maps/search/?api=1&query=首里城"),
-        ("10:39 PARCO CITY 購物 [cite: 51, 216, 217]", "https://www.google.com/maps/search/?api=1&query=PARCO+CITY+Okinawa"),
-        ("11:43 午餐：敘敘苑 燒肉 [cite: 53, 222]", "https://www.google.com/maps/search/?api=1&query=敘敘苑+沖繩浦添"),
-        ("13:43 AEON MALL Rycom [cite: 59, 224, 225]", "https://www.google.com/maps/search/?api=1&query=AEON+MALL+Okinawa+Rycom"),
-        ("14:44 沖繩寶可夢中心 [cite: 64, 229, 230]", "https://www.google.com/maps/search/?api=1&query=Pokemon+Center+Okinawa"),
-        ("15:59 美國村 [cite: 38, 234, 235]", "https://www.google.com/maps/search/?api=1&query=美國村"),
-        ("19:02 晚餐：迴轉壽司市場 [cite: 43, 239, 240]", "https://www.google.com/maps/search/?api=1&query=迴轉壽司市場+美濱店")
-    ],
-    "Day 4：1/4 (週日) 北部景點 [cite: 39, 251]": [
-        ("09:57 BANTA CAFE [cite: 48, 271, 272]", "https://www.google.com/maps/search/?api=1&query=BANTA+CAFE"),
-        ("11:28 萬座毛 [cite: 50, 276, 277]", "https://www.google.com/maps/search/?api=1&query=萬座毛"),
-        ("12:54 古宇利海洋塔 [cite: 57, 280, 281]", "https://www.google.com/maps/search/?api=1&query=古宇利海洋塔"),
-        ("13:58 午餐：古宇利蝦蝦飯 [cite: 62, 286, 287]", "https://www.google.com/maps/search/?api=1&query=Kouri+Shrimp"),
-        ("15:28 美麗海水族館 [cite: 66, 291, 292]", "https://www.google.com/maps/search/?api=1&query=美麗海水族館"),
-        ("17:59 晚餐：百年古家 大家 [cite: 70, 295, 296]", "https://www.google.com/maps/search/?api=1&query=百年古家+大家")
-    ],
-    "Day 5：1/5 (週一) 南部與歸途 [cite: 68, 306]": [
-        ("09:22 DMM Kariyushi 水族館 [cite: 80, 327, 328]", "https://www.google.com/maps/search/?api=1&query=DMM+Kariyushi+Aquarium"),
-        ("11:29 午餐：暖暮拉麵 (系滿) [cite: 84, 332, 334]", "https://www.google.com/maps/search/?api=1&query=暖暮拉麵+系滿店"),
-        ("12:35 ASHIBINAA Outlet [cite: 86, 337, 338]", "https://www.google.com/maps/search/?api=1&query=ASHIBINAA+Outlet"),
-        ("15:52 還車：relax car rental [cite: 89, 342, 343]", "https://www.google.com/maps/search/?api=1&query=relax+car+rental+okinawa"),
-        ("16:33 珀塔瑪機場飯糰 [cite: 91, 348, 349]", "https://www.google.com/maps/search/?api=1&query=Potama+Naha+Airport")
-    ]
-}
+# --- Tab 1: 每日行程 ---
+with tab1:
+    st.title("☀️ 沖繩自駕趣")
+    
+    days = {
+        "Day 1: 1/1 (週四)": {
+            "weather": "☁️ 那霸 18°C - 21°C",
+            "items": [
+                {"type": "transport", "time": "16:50", "name": "桃園國際機場 (IT232)", "url": "https://www.google.com/maps/search/桃園機場"},
+                {"type": "spot", "time": "19:10", "name": "抵達那霸機場", "url": "https://www.google.com/maps/search/那霸機場"},
+                {"type": "restaurant", "time": "21:58", "name": "Steak House 88 Jr.", "url": "https://www.google.com/maps/search/Steak+House+88+Jr.+Matsuyama", "tags": [("必吃", "龍蝦牛排餐"), ("攻略", "CP值極高，附自助吧")]}
+            ]
+        },
+        "Day 2: 1/2 (週五)": {
+            "weather": "☀️ 南部 20°C",
+            "items": [
+                {"type": "transport", "time": "09:07", "name": "Relax Car Rental 取車", "url": "https://www.google.com/maps/search/Relax+Car+Rental+Okinawa"},
+                {"type": "spot", "time": "11:02", "name": "瀬長島 Umikaji Terrace", "url": "https://www.google.com/maps/search/瀬長島", "tags": [("必吃", "幸福鬆餅"), ("必買", "手作皮革")]},
+                {"type": "restaurant", "time": "15:04", "name": "玉泉洞 (沖繩世界)", "url": "https://www.google.com/maps/search/玉泉洞", "tags": [("攻略", "全長5公里鐘乳石洞")]}
+            ]
+        },
+        "Day 3: 1/3 (週六)": {
+            "weather": "☁️ 中部 19°C",
+            "items": [
+                {"type": "spot", "time": "11:43", "name": "敘敘苑 燒肉 (PARCO CITY)", "url": "https://www.google.com/maps/search/敘敘苑+PARCO+CITY", "tags": [("必點", "牛舌、商業午餐")]},
+                {"type": "spot", "time": "14:44", "name": "寶可夢中心 (永旺夢樂城)", "url": "https://www.google.com/maps/search/Pokemon+Center+Okinawa", "tags": [("必買", "沖繩限定皮卡丘")]}
+            ]
+        },
+        "Day 4: 1/4 (週日)": {
+            "weather": "🌊 北部 21°C",
+            "items": [
+                {"type": "spot", "time": "13:58", "name": "古宇利蝦蝦飯", "url": "https://www.google.com/maps/search/Kouri+Shrimp", "tags": [("必點", "蒜味奶油蝦")]},
+                {"type": "spot", "time": "15:28", "name": "美麗海水族館", "url": "https://www.google.com/maps/search/Churaumi+Aquarium", "tags": [("攻略", "黑潮之海餵食秀")]}
+            ]
+        }
+    }
 
-# 渲染介面
-for day, sites in itinerary.items():
-    st.markdown(f"<div class='day-header'><h3>{day}</h3></div>", unsafe_allow_html=True)
-    for site_name, map_url in sites:
-        col1, col2 = st.columns([4, 1])
-        with col1:
-            st.write(f"📍 {site_name}")
-        with col2:
-            st.link_button("導航", map_url)
+    for day, content in days.items():
+        with st.expander(f"📅 {day} | {content['weather']}", expanded=True):
+            for item in content['items']:
+                card_class = "transport-card" if item['type'] == 'transport' else ("restaurant-card" if item['type'] == 'restaurant' else "")
+                
+                st.markdown(f"""
+                <div class="trip-card {card_class}">
+                    <small>{item['time']}</small><br>
+                    <strong>{item['name']}</strong>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                if "tags" in item:
+                    tag_html = ""
+                    for t_type, t_text in item['tags']:
+                        t_class = "tag-must-eat" if t_type in ["必吃", "必點"] else "tag-tips"
+                        tag_html += f'<span class="tag {t_class}">{t_type}: {t_text}</span>'
+                    st.markdown(tag_html, unsafe_allow_html=True)
+                
+                st.link_button(f"🚗 導航至 {item['name']}", item['url'])
+                st.write("")
 
-st.divider()
-st.info("💡 提示：在手機上點擊『導航』會自動開啟 Google Maps App。")
+# --- Tab 2: 住宿/航班 ---
+with tab2:
+    st.header("✈️ 航班資訊")
+    st.info("**去程**：1/1 IT232 16:50-19:10  \n**回程**：1/5 IT233 20:10-21:10")
+    
+    st.header("🏨 住宿資訊")
+    st.success("**沖繩那霸 La'gent 飯店** \n地址：〒900-0014 沖縄県那覇市松尾２丁目１−１  \n電話：098-860-0300")
+    
+    st.header("☎️ 緊急聯絡")
+    st.warning("警察局：110 | 急救/火警：119  \n租車公司 (Relax)：098-xxx-xxxx")
 
-
+# --- Tab 3: 預算記帳 ---
+with tab3:
+    st.header("💰 行程預算表")
+    df = pd.DataFrame([
+        {"項目": "機票", "金額": 12000, "狀態": "已付"},
+        {"項目": "住宿", "金額": 8500, "狀態": "預計"},
+        {"項目": "租車", "金額": 3000, "狀態": "預計"},
+    ])
+    st.table(df)
+    st.metric("預估總支出", f"NT$ {df['金額'].sum():,}")
