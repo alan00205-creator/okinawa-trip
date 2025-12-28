@@ -3,7 +3,7 @@ import pandas as pd
 import streamlit.components.v1 as components
 
 # 1. 網頁配置：手機優先設計
-st.set_page_config(page_title="2026年1月沖繩家族旅遊 App", page_icon="🐢", layout="wide")
+st.set_page_config(page_title="2026 沖繩家族行 App", page_icon="🐢", layout="wide")
 
 # 2. 自定義 CSS：打造可愛、專業的 App 感
 st.markdown("""
